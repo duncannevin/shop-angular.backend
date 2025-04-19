@@ -24,8 +24,9 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.788.0",
+    "@aws-sdk/lib-dynamodb": "^3.789.0",
     "aws-cdk-lib": "^2.38.0",
-    "aws-sdk": "^2.1692.0",
     "constructs": "^10.0.0"
   }
 }

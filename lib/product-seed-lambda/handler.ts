@@ -1,6 +1,8 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { BatchWriteCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-const ddb = new DynamoDB.DocumentClient();
+const client = new DynamoDBClient();
+const ddb = DynamoDBDocumentClient.from(client);
 const tableName = process.env.TABLE_NAME!;
 
 function generateMockProduct(id: number) {
@@ -13,27 +15,27 @@ function generateMockProduct(id: number) {
   };
 }
 
-export async function handler() {
-  const putRequests = Array.from({ length: 100 }, (_, i) => ({
-    PutRequest: {
-      Item: generateMockProduct(i + 1),
-    },
-  }));
+export async function main() {
+  const items = Array.from({ length: 100 }, (_, i) => generateMockProduct(i + 1));
 
-  // DynamoDB only allows 25 items per batchWrite
-  const batches = [];
-  for (let i = 0; i < putRequests.length; i += 25) {
-    batches.push(putRequests.slice(i, i + 25));
+  // Batch 25 items at a time
+  const batches: typeof items[] = [];
+  for (let i = 0; i < items.length; i += 25) {
+    batches.push(items.slice(i, i + 25));
   }
 
   for (const batch of batches) {
-    await ddb
-      .batchWrite({
-        RequestItems: {
-          [tableName]: batch,
-        },
-      })
-      .promise();
+    const requestItems = batch.map((item) => ({
+      PutRequest: { Item: item },
+    }));
+
+    const command = new BatchWriteCommand({
+      RequestItems: {
+        [tableName]: requestItems,
+      },
+    });
+
+    await ddb.send(command);
   }
 
   return { status: 'seeded' };
