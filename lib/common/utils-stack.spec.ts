@@ -1,14 +1,14 @@
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 
-import {isParameter, mapParams, mapResourcePath, stripCurlyBraces} from './utils';
+import {isParameter, mapParams, mapResourcePath, stripCurlyBraces} from './utils-stack';
 
 describe('utils', () => {
   describe('mapParams', () => {
     it('should only map actual parameters', () => {
       const path = ['{param1}', '{param2}', 'not-a-param'];
       const expected = {
-        param1: "$input.params('{param1}')",
-        param2: "$input.params('{param2}')",
+        param1: "$input.params('param1')",
+        param2: "$input.params('param2')",
       };
       expect(mapParams(path)).toEqual(expected);
     });

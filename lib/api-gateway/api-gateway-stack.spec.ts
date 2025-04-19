@@ -1,9 +1,9 @@
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as cdk from 'aws-cdk-lib';
-import {GatewayStack} from './gateway-stack';
+import {ApiGatewayStack} from './api-gateway-stack';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {mapResourcePath} from './utils';
+import {mapResourcePath} from '../common/utils-stack';
 
 const mockLambdaFunction = {ima: 'little lambda'} as unknown as lambda.Function;
 const mockApp = {ima: 'little app'} as unknown as cdk.App;
@@ -48,18 +48,18 @@ const mapResourcePathMock = {
   addCorsPreflight: jest.fn(),
 };
 
-jest.mock('./utils', () => ({
-  ...jest.requireActual('./utils'),
+jest.mock('../common/utils-stack', () => ({
+  ...jest.requireActual('../common/utils-stack'),
   mapResourcePath: jest.fn(),
 }));
 
 (mapResourcePath as jest.Mock).mockImplementation(() => mapResourcePathMock);
 
 describe('ProductApiGatewayStack', () => {
-  let stack: GatewayStack;
+  let stack: ApiGatewayStack;
 
   beforeEach(() => {
-    stack = new GatewayStack(mockApp, 'TestStack', 'test-path', 'Test API', 'Test API Description');
+    stack = new ApiGatewayStack(mockApp, 'ProductApiGatewayStack');
   });
 
   it('should initialize', () => {

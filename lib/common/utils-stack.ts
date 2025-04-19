@@ -6,7 +6,7 @@ export function mapParams(path: string[]): Record<string, string> {
       return mapped;
     }
 
-    mapped[stripCurlyBraces(param)] = `$input.params('${param}')`;
+    mapped[stripCurlyBraces(param)] = `$input.params('${stripCurlyBraces(param)}')`;
     return mapped;
   }, {});
 }

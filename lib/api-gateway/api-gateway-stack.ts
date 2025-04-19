@@ -2,39 +2,37 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {mapParams, mapResourcePath} from './utils';
+import {mapParams, mapResourcePath} from '../common/utils-stack';
 
-export class GatewayStack {
-  private readonly stack: cdk.Stack;
+export type AddLambdaFunction = (lambda: lambda.Function, path: string[], method: HttpMethod, statusCode: number) => void;
+
+export class ApiGatewayStack extends cdk.Stack {
   private api: apiGateway.RestApi;
   private readonly root: apiGateway.IResource;
 
   constructor(
     scope: cdk.App,
     id: string,
-    rootPath: string,
-    apiName: string,
-    description: string,
   ) {
-    this.stack = new cdk.Stack(scope, id, {});
+    super(scope, id);
     this.api = new apiGateway.RestApi(
-      this.stack,
-      apiName,
+      this,
+      'product-api-gateway',
       {
-        restApiName: apiName,
-        description: description,
+        restApiName: 'Product API Gateway',
+        description: 'This API serves product data',
       },
     );
 
-    this.root = this.api.root.addResource(rootPath);
+    this.root = this.api.root.addResource('products');
   }
 
-  addLambda(
+  addLambda: AddLambdaFunction = (
     lambda: lambda.Function,
     path: string[],
     method: HttpMethod,
     statusCode: number,
-  ): void {
+  ) => {
     const template = mapParams(path);
     const resource = mapResourcePath(this.root, path);
 
