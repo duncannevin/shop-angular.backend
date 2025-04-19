@@ -3,6 +3,13 @@
 *.d.ts
 node_modules
 
+# ide stuff
+.idea
+.vscode
+
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+/dist
+*.template.yaml
