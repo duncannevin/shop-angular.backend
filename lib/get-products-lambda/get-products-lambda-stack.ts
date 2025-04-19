@@ -30,6 +30,6 @@ export class GetProductsLambdaStack extends cdk.Stack {
       },
     );
 
-    apiGateway.addLambda(this.lambda, [], HttpMethod.GET, 200);
+    apiGateway.addLambda(this.lambda, ['{lower}', '{upper}'], HttpMethod.GET, 200);
   }
 }

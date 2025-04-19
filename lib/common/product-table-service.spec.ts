@@ -21,7 +21,7 @@ describe('ProductTableService', () => {
   let productTableService: ProductTableService;
 
   beforeEach(() => {
-    productTableService = new ProductTableService('test-table', {} as any);
+    productTableService = new ProductTableService('test-table');
   });
 
   it('should create an instance of ProductTableService', () => {
@@ -66,20 +66,36 @@ describe('ProductTableService', () => {
     });
   });
 
-  describe('getProductBatch', () => {
-    it('should return a batch of products', async () => {
+  describe('getProductsPaginated', () => {
+    it('should return paginated products', async () => {
       const mockProducts = [
         {id: '1', name: 'Product 1', price: 100, category: 'Category 1', inStock: true},
         {id: '2', name: 'Product 2', price: 200, category: 'Category 2', inStock: false},
-        {id: '3', name: 'Product 3', price: 300, category: 'Category 3', inStock: true},
       ];
 
-      sendMock.mockReturnValue({Items: mockProducts});
+      sendMock.mockReturnValue({Items: mockProducts, LastEvaluatedKey: {id: '2'}});
 
-      const products = await productTableService.getProductBatch(0, 2);
+      const {products, lastEvaluatedKey} = await productTableService.getProductsPaginated(1);
 
-      expect(products).toEqual(mockProducts.slice(0, 2));
-      expect(sendMock).toHaveBeenCalledWith(new ScanCommand({TableName: 'test-table'}));
+      expect(products).toEqual(mockProducts);
+      expect(lastEvaluatedKey).toEqual({id: '2'});
+      expect(sendMock).toHaveBeenCalledWith(new ScanCommand({TableName: 'test-table', Limit: 1}));
+    });
+
+    it('should return use the start key', async () => {
+      const mockProducts = [
+        {id: '1', name: 'Product 1', price: 100, category: 'Category 1', inStock: true},
+        {id: '2', name: 'Product 2', price: 200, category: 'Category 2', inStock: false},
+      ];
+      const startKey = {id: '1'};
+
+      sendMock.mockReturnValue({Items: mockProducts, LastEvaluatedKey: {id: '2'}});
+
+      const {products, lastEvaluatedKey} = await productTableService.getProductsPaginated(1, startKey);
+
+      expect(products).toEqual(mockProducts);
+      expect(lastEvaluatedKey).toEqual({id: '2'});
+      expect(sendMock).toHaveBeenCalledWith(new ScanCommand({TableName: 'test-table', Limit: 1, ExclusiveStartKey: startKey}));
     });
   });
 });

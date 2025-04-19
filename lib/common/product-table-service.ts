@@ -9,11 +9,16 @@ export interface Product {
   inStock: boolean;
 }
 
+export interface PaginatedResult<T> {
+  products: T[];
+  lastEvaluatedKey?: Record<string, any>; // you can serialize this if needed
+}
+
 export class ProductTableService {
   private readonly tableName: string;
   private readonly docClient: DynamoDBDocumentClient;
 
-  constructor(tableName: string, docClient: DynamoDBDocumentClient) {
+  constructor(tableName: string) {
     this.tableName = tableName;
     const client = new DynamoDBClient();
     this.docClient = DynamoDBDocumentClient.from(client);
@@ -39,8 +44,17 @@ export class ProductTableService {
     return result.Item as Product || undefined;
   }
 
-  async getProductBatch(from: number, to: number): Promise<Product[]> {
-    const allProducts = await this.getProducts();
-    return allProducts.slice(from, to);
+  async getProductsPaginated(limit = 20, exclusiveStartKey?: Record<string, any>): Promise<PaginatedResult<Product>> {
+    const command = new ScanCommand({
+      TableName: this.tableName,
+      Limit: limit,
+      ExclusiveStartKey: exclusiveStartKey,
+    });
+
+    const result = await this.docClient.send(command);
+    return {
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
   }
 }
