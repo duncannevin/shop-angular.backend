@@ -8,11 +8,14 @@ const productTableService = new ProductTableService(tableName);
 
 export async function main(event: GetProductsEvent) {
   console.log('GetProductsLambda', 'Received event:', JSON.stringify(event));
-  const products = await productTableService.getProducts();
+  const products = await productTableService.getProductsPaginated(5);
+
   const result = {
     result: 'ok',
-    data: products.slice(0, 20),
+    data: products.products,
   }
+
   console.log('GetProductsLambda', 'Result:', result);
+  
   return result;
 }

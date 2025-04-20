@@ -4,6 +4,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import {Construct} from 'constructs';
 import {ApiGatewayStack} from '../api-gateway/api-gateway-stack';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
+import {ProductsTableStack} from '../products-table/products-table-stack';
 
 export class GetProductLambdaStack extends cdk.Stack {
   private readonly lambda: lambda.Function;
@@ -12,6 +13,7 @@ export class GetProductLambdaStack extends cdk.Stack {
     scope: Construct,
     id: string,
     apiGateway: ApiGatewayStack,
+    productsTable: ProductsTableStack,
   ) {
     super(scope, id);
 
@@ -30,5 +32,6 @@ export class GetProductLambdaStack extends cdk.Stack {
     );
 
     apiGateway.addLambda(this.lambda, ['{productId}'], HttpMethod.GET);
+    productsTable.grantReadData(this.lambda);
   }
 }

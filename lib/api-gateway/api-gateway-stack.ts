@@ -44,10 +44,10 @@ export class ApiGatewayStack extends cdk.Stack {
         integrationResponses: [
           {
             statusCode: '200',
+            selectionPattern: '',
             responseTemplates: {
               'application/json': '$input.json("$")',
             },
-            selectionPattern: '.*',
           },
           {
             statusCode: '404',
