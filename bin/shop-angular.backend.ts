@@ -17,7 +17,7 @@ const productsTableStack = new ProductsTableStack(app, 'ProductsTableStack');
 
 // Gateway Lambda stacks
 new GetProductsLambdaStack(app, 'GetProductsLambdaStack', apiGateway, productsTableStack);
-new GetProductLambdaStack(app, 'GetProductLambdaStack', apiGateway);
+new GetProductLambdaStack(app, 'GetProductLambdaStack', apiGateway, productsTableStack);
 
 // Solo lambdas
 new ProductSeedLambdaStack(app, 'ProductSeedLambdaStack', productsTableStack);
