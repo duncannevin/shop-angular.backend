@@ -20,4 +20,8 @@ export class ProductsTableStack extends cdk.Stack {
   grantWriteData(lambda: lambda.IFunction): void {
     this.table.grantWriteData(lambda);
   }
+
+  grantReadData(lambda: lambda.IFunction): void {
+    this.table.grantReadData(lambda);
+  }
 }

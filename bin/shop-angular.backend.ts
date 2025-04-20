@@ -16,7 +16,7 @@ const apiGateway = new ApiGatewayStack(app, 'ProductApiGateway');
 const productsTableStack = new ProductsTableStack(app, 'ProductsTableStack');
 
 // Gateway Lambda stacks
-new GetProductsLambdaStack(app, 'GetProductsLambdaStack', apiGateway);
+new GetProductsLambdaStack(app, 'GetProductsLambdaStack', apiGateway, productsTableStack);
 new GetProductLambdaStack(app, 'GetProductLambdaStack', apiGateway);
 
 // Solo lambdas

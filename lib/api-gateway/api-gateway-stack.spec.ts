@@ -74,15 +74,20 @@ describe('ProductApiGatewayStack', () => {
     it('should add the new integration', () => {
       const path: string[] = ['p1', 'p2', '{p3}'];
       const method = HttpMethod.GET;
-      const statusCode = 200;
 
-      stack.addLambda(mockLambdaFunction, path, method, statusCode);
+      stack.addLambda(mockLambdaFunction, path, method);
 
       expect(mapResourcePathMock.addMethod).toHaveBeenCalledWith(
         method,
         expect.any(Object),
         {
-          methodResponses: [{statusCode: statusCode.toString()}],
+          methodResponses: [
+            {statusCode: '200'},
+            {statusCode: '404'},
+            {statusCode: '500'},
+          ],
+          requestParameters: {
+          },
         },
       );
     });
@@ -92,7 +97,7 @@ describe('ProductApiGatewayStack', () => {
       const method = HttpMethod.GET;
       const statusCode = 200;
 
-      stack.addLambda(mockLambdaFunction, path, method, statusCode);
+      stack.addLambda(mockLambdaFunction, path, method);
 
       expect(mapResourcePathMock.addCorsPreflight).toHaveBeenCalledWith({
         allowOrigins: apiGateway.Cors.ALL_ORIGINS,

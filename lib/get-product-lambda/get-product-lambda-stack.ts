@@ -3,7 +3,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 import {Construct} from 'constructs';
 import {ApiGatewayStack} from '../api-gateway/api-gateway-stack';
-import * as path from 'node:path';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
 
 export class GetProductLambdaStack extends cdk.Stack {
@@ -25,11 +24,11 @@ export class GetProductLambdaStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         handler: 'handler.main',
         code: lambda.Code.fromAsset(
-          path.join(__dirname, '..', '..', 'dist', 'lib', 'get-product-lambda'),
+          'dist/get-product-lambda',
         ),
       },
     );
 
-    apiGateway.addLambda(this.lambda, ['{productId}'], HttpMethod.GET, 200);
+    apiGateway.addLambda(this.lambda, ['{productId}'], HttpMethod.GET);
   }
 }

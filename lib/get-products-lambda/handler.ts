@@ -1,9 +1,18 @@
-export interface GetProductsEvent {}
+import { ProductTableService } from 'services/product-table-service';
 
-import { ProductTableService } from '../common/product-table-service';
+export interface GetProductsEvent {
+}
+
+const tableName = process.env.TABLE_NAME!;
+const productTableService = new ProductTableService(tableName);
 
 export async function main(event: GetProductsEvent) {
-  return {
-    products: JSON.stringify([]),
+  console.log('GetProductsLambda', 'Received event:', JSON.stringify(event));
+  const products = await productTableService.getProducts();
+  const result = {
+    result: 'ok',
+    data: products.slice(0, 20),
   }
+  console.log('GetProductsLambda', 'Result:', result);
+  return result;
 }

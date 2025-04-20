@@ -44,7 +44,7 @@ export class ProductTableService {
     return result.Item as Product || undefined;
   }
 
-  async getProductsPaginated(limit = 20, exclusiveStartKey?: Record<string, any>): Promise<PaginatedResult<Product>> {
+  async getProductsPaginated(limit: number, exclusiveStartKey?: Record<string, any>): Promise<PaginatedResult<Product>> {
     const command = new ScanCommand({
       TableName: this.tableName,
       Limit: limit,

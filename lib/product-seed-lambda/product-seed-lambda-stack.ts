@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 import {Construct} from 'constructs';
-import * as path from 'node:path';
 import {ProductsTableStack} from '../products-table/products-table-stack';
 
 export class ProductSeedLambdaStack extends cdk.Stack {
@@ -24,7 +23,7 @@ export class ProductSeedLambdaStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
         handler: 'handler.main',
         code: lambda.Code.fromAsset(
-          path.join(__dirname, '..', '..', 'dist', 'lib', 'product-seed-lambda'),
+          'dist/product-seed-lambda',
         ),
       },
     );

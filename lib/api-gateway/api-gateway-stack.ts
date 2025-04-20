@@ -2,9 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {mapParams, mapResourcePath} from '../common/utils-stack';
-
-export type AddLambdaFunction = (lambda: lambda.Function, path: string[], method: HttpMethod, statusCode: number) => void;
+import {mapParams, mapRequestQueryParams, mapResourcePath} from '../common/utils-stack';
 
 export class ApiGatewayStack extends cdk.Stack {
   private api: apiGateway.RestApi;
@@ -27,23 +25,45 @@ export class ApiGatewayStack extends cdk.Stack {
     this.root = this.api.root.addResource('products');
   }
 
-  addLambda: AddLambdaFunction = (
+  addLambda(
     lambda: lambda.Function,
     path: string[],
     method: HttpMethod,
-    statusCode: number,
-  ) => {
+    queryParams: string[] = [],
+  ) {
     const template = mapParams(path);
     const resource = mapResourcePath(this.root, path);
 
     const integration = new apiGateway.LambdaIntegration(
       lambda,
       {
-        integrationResponses: [{statusCode: statusCode.toString()}],
         requestTemplates: {
           'application/json': JSON.stringify(template),
         },
         proxy: false,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': '$input.json("$")',
+            },
+            selectionPattern: '.*',
+          },
+          {
+            statusCode: '404',
+            selectionPattern: '.*not found.*',
+            responseTemplates: {
+              'application/json': JSON.stringify({ error: 'Not Found' })
+            },
+          },
+          {
+            statusCode: '500',
+            selectionPattern: '.*server error.*',
+            responseTemplates: {
+              'application/json': JSON.stringify({ error: 'Internal Server Error' })
+            },
+          }
+        ],
       },
     );
 
@@ -51,7 +71,12 @@ export class ApiGatewayStack extends cdk.Stack {
       method,
       integration,
       {
-        methodResponses: [{statusCode: statusCode.toString()}]
+        requestParameters: mapRequestQueryParams(queryParams),
+        methodResponses: [
+          {statusCode: '200'},
+          {statusCode: '404'},
+          {statusCode: '500'},
+        ]
       },
     );
 

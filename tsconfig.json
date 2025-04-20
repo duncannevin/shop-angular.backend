@@ -24,7 +24,12 @@
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "paths": {
+      "services/*": [
+        "./lib/services/*"
+      ],
+    }
   },
   "include": [
     "lib/**/*.ts"
@@ -36,6 +41,7 @@
     "bin",
     "dist",
     "**/*stack.ts",
-    "lib/**/*.spec.ts"
+    "lib/**/*.spec.ts",
+    "**/*.layer.ts"
   ]
 }

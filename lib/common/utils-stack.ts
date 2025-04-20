@@ -30,3 +30,10 @@ export function mapResourcePath(root: apiGateway.IResource, path: string[]): api
       : parent.addResource(segment);
   }, root)
 }
+
+export function mapRequestQueryParams(queryParams: string[]): Record<string, true> {
+  return queryParams.reduce<Record<string, true>>((mapped, param) => {
+    mapped[`method.request.querystring.${stripCurlyBraces(param)}`] = true;
+    return mapped;
+  }, {});
+}
