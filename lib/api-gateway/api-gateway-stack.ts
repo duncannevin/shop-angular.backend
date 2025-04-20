@@ -71,19 +71,34 @@ export class ApiGatewayStack extends cdk.Stack {
             responseTemplates: {
               'application/json': '$input.json("$")',
             },
+            responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': "'*'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Headers': "'*'",
+            },
           },
           {
             statusCode: '404',
             selectionPattern: '.*not found.*',
             responseTemplates: {
-              'application/json': JSON.stringify({ error: 'Not Found' })
+              'application/json': JSON.stringify({error: 'Not Found'})
+            },
+            responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': "'*'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           },
           {
             statusCode: '500',
             selectionPattern: '.*server error.*',
             responseTemplates: {
-              'application/json': JSON.stringify({ error: 'Internal Server Error' })
+              'application/json': JSON.stringify({error: 'Internal Server Error'})
+            },
+            responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': "'*'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           }
         ],
@@ -96,9 +111,27 @@ export class ApiGatewayStack extends cdk.Stack {
       {
         requestParameters: mapRequestQueryParams(queryParams),
         methodResponses: [
-          {statusCode: '200'},
-          {statusCode: '404'},
-          {statusCode: '500'},
+          {
+            statusCode: '200', responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': true,
+              'method.response.header.Access-Control-Allow-Methods': true,
+              'method.response.header.Access-Control-Allow-Headers': true,
+            }
+          },
+          {
+            statusCode: '404', responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': true,
+              'method.response.header.Access-Control-Allow-Methods': true,
+              'method.response.header.Access-Control-Allow-Headers': true,
+            }
+          },
+          {
+            statusCode: '500', responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': true,
+              'method.response.header.Access-Control-Allow-Methods': true,
+              'method.response.header.Access-Control-Allow-Headers': true,
+            }
+          },
         ]
       },
     );
@@ -106,7 +139,6 @@ export class ApiGatewayStack extends cdk.Stack {
     resource.addCorsPreflight({
       allowOrigins: apiGateway.Cors.ALL_ORIGINS,
       allowMethods: apiGateway.Cors.ALL_METHODS,
-      allowHeaders: apiGateway.Cors.DEFAULT_HEADERS,
     });
   }
 }
