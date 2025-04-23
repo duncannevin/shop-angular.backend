@@ -1,9 +1,6 @@
 {
   "name": "shop-angular.backend",
   "version": "0.1.0",
-  "bin": {
-    "shop-angular.backend": "bin/shop-angular.backend.js"
-  },
   "scripts": {
     "cdk:deploy": "cdk deploy",
     "cdk:diff": "cdk diff",
@@ -11,7 +8,8 @@
     "cdk:bootstrap": "ts-node bin/bootstrap.ts",
     "cdk:destroy": "cdk destroy",
     "build": "npx webpack",
-    "test": "jest"
+    "test": "jest",
+    "seed": "ts-node bin/seed-products.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
