@@ -12,7 +12,7 @@ export interface GetProductsResponse {
 const productTableService = new ProductService();
 const stockTableService = new StockService();
 
-export async function main(event: GetProductsEvent) {
+export async function main(event: GetProductsEvent): Promise<{result: string, data: PublicProduct[]}> {
   console.log('GetProductsLambda', 'Event:', event);
   try {
     const products = await productTableService.list();

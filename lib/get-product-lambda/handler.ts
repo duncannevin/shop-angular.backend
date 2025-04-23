@@ -1,20 +1,41 @@
-// import {ProductService} from 'services/product-service';
+import {ProductService, PublicProduct} from 'services/product-service';
+import {StockService} from 'services/stock-service';
 
 export interface GetProductEvent {
   productId: string;
 }
 
-// const tableName = process.env.TABLE_NAME!;
-// const productTableService = new ProductService();
+export interface GetProductResponse {
+  result: string;
+  data: PublicProduct;
+}
 
-export async function main(event: GetProductEvent) {
-  console.log('GetProductLambda', 'Received event:', JSON.stringify(event));
+const productTableService = new ProductService();
+const stockTableService = new StockService();
+
+export async function main(event: GetProductEvent): Promise<{result: string, data: PublicProduct}> {
+  const product = await productTableService.get(event.productId);
+
+  if (!product) {
+    console.log('GetProductsLambda', 'Product not found:', event.productId);
+    throw new Error('not found');
+  }
+
+  const stock = await stockTableService.get(event.productId);
+  const productsWithStock: PublicProduct = {
+    id: product.id,
+    title: product.title,
+    description: product.description,
+    price: product.price,
+    count: stock ? stock.count : 0,
+  };
 
   const result = {
     result: 'ok',
-    data: {},
+    data: productsWithStock,
   }
 
-  console.log('GetProductLambda', 'Result:', result);
+  console.log('GetProductsLambda', 'Result:', result);
+
   return result;
 }
