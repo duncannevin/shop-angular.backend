@@ -17,6 +17,14 @@ export interface Product {
   createdAt: number;
 }
 
+export interface PublicProduct {
+  id: string;
+  count: number;
+  price: number;
+  title: string;
+  description: string;
+}
+
 export class ProductService {
   private readonly client: DynamoDBClient;
   private docClient: DynamoDBDocumentClient;

@@ -26,6 +26,10 @@ export class GetProductLambdaStack extends cdk.Stack {
         code: lambda.Code.fromAsset(
           'dist/get-product-lambda',
         ),
+        environment: {
+          PRODUCT_TABLE_NAME: 'ProductsTable',
+          STOCK_TABLE_NAME: 'StockTable',
+        },
       },
     );
 
