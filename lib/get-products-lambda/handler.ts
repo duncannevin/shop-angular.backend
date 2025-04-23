@@ -1,19 +1,15 @@
-import { ProductTableService } from 'services/product-table-service';
+// import { ProductService } from 'services/product-service';
 
 export interface GetProductsEvent {
 }
 
-const tableName = process.env.TABLE_NAME!;
-const productTableService = new ProductTableService(tableName);
+// const tableName = process.env.TABLE_NAME!;
+// const productTableService = new ProductService();
 
 export async function main(event: GetProductsEvent) {
-  console.log('GetProductsLambda', 'Received event:', JSON.stringify(event));
-  // TODO: Actually implement pagination, just doing this to limit db reads for now.
-  const products = await productTableService.getProductsPaginated(5);
-
   const result = {
     result: 'ok',
-    data: products.products,
+    data: [],
   }
 
   console.log('GetProductsLambda', 'Result:', result);
