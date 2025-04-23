@@ -39,6 +39,10 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     this.root = this.api.root.addResource('products');
+    this.root.addCorsPreflight({
+      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+      allowMethods: apiGateway.Cors.ALL_METHODS,
+    });
   }
 
   /**
@@ -73,7 +77,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           },
@@ -85,7 +89,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           },
@@ -97,7 +101,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           }
@@ -135,10 +139,5 @@ export class ApiGatewayStack extends cdk.Stack {
         ]
       },
     );
-
-    resource.addCorsPreflight({
-      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
-      allowMethods: apiGateway.Cors.ALL_METHODS,
-    });
   }
 }
