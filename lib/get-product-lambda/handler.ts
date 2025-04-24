@@ -22,7 +22,7 @@ export async function main(event: GetProductEvent): Promise<{result: string, dat
   }
 
   const stock = await stockTableService.get(event.productId);
-  const productsWithStock: PublicProduct = {
+  const productWithStock: PublicProduct = {
     id: product.id,
     title: product.title,
     description: product.description,
@@ -32,7 +32,7 @@ export async function main(event: GetProductEvent): Promise<{result: string, dat
 
   const result = {
     result: 'ok',
-    data: productsWithStock,
+    data: productWithStock,
   }
 
   console.log('GetProductsLambda', 'Result:', result);

@@ -32,6 +32,6 @@ export class CreateProductLambdaStack extends cdk.Stack {
       },
     );
 
-    apiGateway.addLambda(this.lambda, [], HttpMethod.POST);
+    apiGateway.addLambda(this.lambda, [], HttpMethod.POST, [], ['title', 'description', 'price']);
   }
 }
