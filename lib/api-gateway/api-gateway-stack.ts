@@ -8,7 +8,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {mapParams, mapRequestQueryParams, mapResourcePath} from '../common/utils-stack';
+import {mapBody, mapParams, mapRequestQueryParams, mapResourcePath} from '../common/utils-stack';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -39,6 +39,10 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     this.root = this.api.root.addResource('products');
+    this.root.addCorsPreflight({
+      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+      allowMethods: apiGateway.Cors.ALL_METHODS,
+    });
   }
 
   /**
@@ -47,14 +51,22 @@ export class ApiGatewayStack extends cdk.Stack {
    * @param path - The resource path for the API endpoint.
    * @param method - The HTTP method for the endpoint.
    * @param queryParams - Optional query parameters for the request.
+   * @param bodyParams
    */
   addLambda(
     lambda: lambda.Function,
     path: string[],
     method: HttpMethod,
-    queryParams: string[] = [],
+    queryParams: string[],
+    bodyParams: string[],
   ) {
-    const template = mapParams(path);
+    const queryTemplate = mapParams(path);
+    const bodyTemplate = mapBody(bodyParams);
+    const template = {
+      ...queryTemplate,
+      ...bodyTemplate,
+    }
+    console.log('template:', template);
     const resource = mapResourcePath(this.root, path);
 
     const integration = new apiGateway.LambdaIntegration(
@@ -73,7 +85,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           },
@@ -85,7 +97,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           },
@@ -97,7 +109,7 @@ export class ApiGatewayStack extends cdk.Stack {
             },
             responseParameters: {
               'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
               'method.response.header.Access-Control-Allow-Headers': "'*'",
             },
           }
@@ -135,10 +147,5 @@ export class ApiGatewayStack extends cdk.Stack {
         ]
       },
     );
-
-    resource.addCorsPreflight({
-      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
-      allowMethods: apiGateway.Cors.ALL_METHODS,
-    });
   }
 }

@@ -1,22 +1,45 @@
-import { ProductTableService } from 'services/product-table-service';
+import {ProductService, PublicProduct} from 'services/product-service';
+import {StockService} from 'services/stock-service';
 
 export interface GetProductsEvent {
 }
 
-const tableName = process.env.TABLE_NAME!;
-const productTableService = new ProductTableService(tableName);
+export interface GetProductsResponse {
+  result: string;
+  data: PublicProduct[];
+}
 
-export async function main(event: GetProductsEvent) {
-  console.log('GetProductsLambda', 'Received event:', JSON.stringify(event));
-  // TODO: Actually implement pagination, just doing this to limit db reads for now.
-  const products = await productTableService.getProductsPaginated(5);
+const productTableService = new ProductService();
+const stockTableService = new StockService();
 
-  const result = {
-    result: 'ok',
-    data: products.products,
+export async function main(event: GetProductsEvent): Promise<{result: string, data: PublicProduct[]}> {
+  console.log('GetProductsLambda', 'Event:', event);
+  try {
+    const products = await productTableService.list();
+    const productsWithStock: PublicProduct[] = [];
+
+    for (const product of products) {
+      const stock = await stockTableService.get(product.id);
+
+      productsWithStock.push({
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        count: stock ? stock.count : 0,
+      });
+    }
+
+    const result = {
+      result: 'ok',
+      data: productsWithStock,
+    }
+
+    console.log('GetProductsLambda', 'Result:', result);
+
+    return result;
+  } catch (error) {
+    console.error('GetProductsLambda', 'Error:', error);
+    throw new Error('Error getting products');
   }
-
-  console.log('GetProductsLambda', 'Result:', result);
-
-  return result;
 }

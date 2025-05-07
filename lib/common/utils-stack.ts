@@ -22,6 +22,13 @@ export function mapParams(path: string[]): Record<string, string> {
   }, {});
 }
 
+export function mapBody(bodyParts: string[]): Record<string, string> {
+  return bodyParts.reduce<Record<string, string>>((mapped, param) => {
+    mapped[param] = `$input.path('$.${param}')`;
+    return mapped;
+  }, {});
+}
+
 /**
  * Checks if a string is a parameter enclosed in curly braces.
  * @param str - The string to check.
