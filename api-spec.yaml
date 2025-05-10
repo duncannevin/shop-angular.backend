@@ -184,3 +184,48 @@ paths:
                   error:
                     type: string
                     example: Internal Server Error
+  /products/import:
+    get:
+      summary: Generate a signed URL for importing a products file
+      operationId: importProductsFile
+      parameters:
+        - name: fileName
+          in: query
+          required: true
+          schema:
+            type: string
+            example: products.csv
+      responses:
+        '200':
+          description: Signed URL generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: ok
+                  signedUrl:
+                    type: string
+                    example: https://example-bucket.s3.amazonaws.com/uploaded/products.csv?X-Amz-SignedHeaders=...
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Missing fileName parameter
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal Server Error
