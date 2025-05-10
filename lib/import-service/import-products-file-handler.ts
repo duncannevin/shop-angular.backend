@@ -12,6 +12,8 @@ export interface ImportProductsFileEvent {
 }
 
 export async function main(event: ImportProductsFileEvent): Promise<{result: string, signedUrl: string}> {
+  console.log('Import Products File Handler:', event);
+
   const fileName = event.fileName;
 
   if (!fileName) {
@@ -23,6 +25,7 @@ export async function main(event: ImportProductsFileEvent): Promise<{result: str
     Bucket: BUCKET_NAME,
     Key: objectKey,
     ContentType: 'text/csv',
+    ACL: 'public-read',
   });
 
   const signedUrl = await getSignedUrl(s3, command, {expiresIn: 300}); // 5 minutes

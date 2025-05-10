@@ -23,6 +23,14 @@ export class ImportServiceStack extends cdk.Stack {
         bucketName: 'import-service-bucket',
         removalPolicy: process.env.NODE_ENV !== 'development' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
         versioned: true,
+        cors: [
+          {
+            allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
+            allowedOrigins: ['*'],
+            allowedHeaders: ['*'],
+            maxAge: 3000,
+          },
+        ],
       }
     );
 
@@ -43,6 +51,6 @@ export class ImportServiceStack extends cdk.Stack {
 
     this.bucket.grantPut(this.importProductsFileLambda);
 
-    apiGateway.addLambda(this.importProductsFileLambda, ['import', '{fileName}'], HttpMethod.GET, [], []);
+    apiGateway.addLambda(this.importProductsFileLambda, ['import'], HttpMethod.GET, ['fileName'], []);
   }
 }

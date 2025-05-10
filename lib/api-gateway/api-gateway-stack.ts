@@ -8,7 +8,11 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {mapBody, mapParams, mapRequestQueryParams, mapResourcePath} from '../common/utils-stack';
+import {
+  mapBody,
+  mapParams, mapQueryStringParams,
+  mapResourcePath
+} from '../common/utils-stack';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -62,11 +66,12 @@ export class ApiGatewayStack extends cdk.Stack {
   ) {
     const queryTemplate = mapParams(path);
     const bodyTemplate = mapBody(bodyParams);
+    const queryStringTemplate = mapQueryStringParams(queryParams);
     const template = {
       ...queryTemplate,
       ...bodyTemplate,
-    }
-    console.log('template:', template);
+      ...queryStringTemplate,
+    };
     const resource = mapResourcePath(this.root, path);
 
     const integration = new apiGateway.LambdaIntegration(
@@ -84,9 +89,9 @@ export class ApiGatewayStack extends cdk.Stack {
               'application/json': '$input.json("$")',
             },
             responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
-              'method.response.header.Access-Control-Allow-Headers': "'*'",
+              'method.response.header.Access-Control-Allow-Origin': '\'*\'',
+              'method.response.header.Access-Control-Allow-Methods': '\'GET,POST,OPTIONS\'',
+              'method.response.header.Access-Control-Allow-Headers': '\'*\'',
             },
           },
           {
@@ -96,9 +101,9 @@ export class ApiGatewayStack extends cdk.Stack {
               'application/json': JSON.stringify({error: 'Not Found'})
             },
             responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
-              'method.response.header.Access-Control-Allow-Headers': "'*'",
+              'method.response.header.Access-Control-Allow-Origin': '\'*\'',
+              'method.response.header.Access-Control-Allow-Methods': '\'GET,POST,OPTIONS\'',
+              'method.response.header.Access-Control-Allow-Headers': '\'*\'',
             },
           },
           {
@@ -108,9 +113,9 @@ export class ApiGatewayStack extends cdk.Stack {
               'application/json': JSON.stringify({error: 'Internal Server Error'})
             },
             responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': "'*'",
-              'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'",
-              'method.response.header.Access-Control-Allow-Headers': "'*'",
+              'method.response.header.Access-Control-Allow-Origin': '\'*\'',
+              'method.response.header.Access-Control-Allow-Methods': '\'GET,POST,OPTIONS\'',
+              'method.response.header.Access-Control-Allow-Headers': '\'*\'',
             },
           }
         ],
@@ -121,7 +126,6 @@ export class ApiGatewayStack extends cdk.Stack {
       method,
       integration,
       {
-        requestParameters: mapRequestQueryParams(queryParams),
         methodResponses: [
           {
             statusCode: '200', responseParameters: {
