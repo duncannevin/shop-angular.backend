@@ -25,7 +25,6 @@ export async function main(event: ImportProductsFileEvent): Promise<{result: str
     Bucket: BUCKET_NAME,
     Key: objectKey,
     ContentType: 'text/csv',
-    ACL: 'public-read',
   });
 
   const signedUrl = await getSignedUrl(s3, command, {expiresIn: 300}); // 5 minutes
