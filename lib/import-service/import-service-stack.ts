@@ -48,7 +48,7 @@ export class ImportServiceStack extends cdk.Stack {
       this,
       'ImportProductsFileFunction',
       {
-        runtime: lambda.Runtime.NODEJS_18_X,
+        runtime: lambda.Runtime.NODEJS_20_X,
         code: lambda.Code.fromAsset(
           'dist/import-service',
         ),
@@ -71,7 +71,7 @@ export class ImportServiceStack extends cdk.Stack {
       this,
       'ImportProductsFileParserFunction',
       {
-        runtime: lambda.Runtime.NODEJS_18_X,
+        runtime: lambda.Runtime.NODEJS_20_X,
         code: lambda.Code.fromAsset(
           'dist/import-service',
         ),
