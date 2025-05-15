@@ -5,6 +5,7 @@ import {ApiGatewayStack} from '../lib/api-gateway/api-gateway-stack';
 import {GetProductsLambdaStack} from '../lib/get-products-lambda/get-products-lambda-stack';
 import {GetProductLambdaStack} from '../lib/get-product-lambda/get-product-lambda-stack';
 import {CreateProductLambdaStack} from '../lib/create-product-lambda/create-product-stack';
+import {ImportServiceStack} from '../lib/import-service/import-service-stack';
 
 const app = new cdk.App();
 
@@ -15,3 +16,4 @@ const apiGateway = new ApiGatewayStack(app, 'ProductApiGateway');
 new GetProductsLambdaStack(app, 'GetProductsLambdaStack', apiGateway);
 new GetProductLambdaStack(app, 'GetProductLambdaStack', apiGateway);
 new CreateProductLambdaStack(app, 'CreateProductLambdaStack', apiGateway);
+new ImportServiceStack(app, 'ImportServiceStack', apiGateway);

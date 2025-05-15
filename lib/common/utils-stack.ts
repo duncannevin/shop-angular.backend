@@ -22,6 +22,13 @@ export function mapParams(path: string[]): Record<string, string> {
   }, {});
 }
 
+export function mapQueryStringParams(queryParams: string[]): Record<string, string> {
+  return queryParams.reduce<Record<string, string>>((mapped, param) => {
+    mapped[stripCurlyBraces(param)] = `$input.params('${stripCurlyBraces(param)}')`;
+    return mapped;
+  }, {});
+}
+
 export function mapBody(bodyParts: string[]): Record<string, string> {
   return bodyParts.reduce<Record<string, string>>((mapped, param) => {
     mapped[param] = `$input.path('$.${param}')`;
@@ -63,16 +70,4 @@ export function mapResourcePath(root: apiGateway.IResource, path: string[]): api
       ? root.addResource(segment)
       : parent.addResource(segment);
   }, root);
-}
-
-/**
- * Maps a list of query parameter names to a record of API Gateway request parameters.
- * @param queryParams - An array of query parameter names.
- * @returns A record mapping query parameter names to `true`, indicating they are required.
- */
-export function mapRequestQueryParams(queryParams: string[]): Record<string, true> {
-  return queryParams.reduce<Record<string, true>>((mapped, param) => {
-    mapped[`method.request.querystring.${stripCurlyBraces(param)}`] = true;
-    return mapped;
-  }, {});
 }
