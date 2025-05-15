@@ -1,9 +1,13 @@
 import {SQSEvent} from 'aws-lambda';
 import {ProductService} from 'services/product-service';
 import {StockService} from 'services/stock-service';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 const productService = new ProductService();
 const stockService = new StockService();
+const snsClient = new SNSClient([{
+  region: process.env.AWS_REGION!,
+}]);
 
 export interface ImportedProduct {
   title: string;
@@ -47,5 +51,19 @@ export async function main(event: SQSEvent) {
       console.error('Error processing record:', record, error);
     }
   }
+
+  try {
+    const createProductTopicArn = process.env.CREATE_PRODUCT_TOPIC_ARN;
+    const publishCommand = new PublishCommand({
+      TopicArn: createProductTopicArn,
+      Message: JSON.stringify({message: 'Products created successfully'}),
+    });
+
+    await snsClient.send(publishCommand as any);
+    console.log('Event published to SNS topic:', createProductTopicArn);
+  } catch (error) {
+    console.error('Error publishing to SNS topic:', error);
+  }
+
   console.log('All records processed successfully.');
 }
