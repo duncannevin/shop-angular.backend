@@ -5,6 +5,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import {ApiGatewayStack} from '../api-gateway/api-gateway-stack';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
+import {CatalogBatchProcessStack} from '../catalog-batch-process/catalog-batch-process-stack';
 
 export class ImportServiceStack extends cdk.Stack {
   private readonly bucket: s3.Bucket;
@@ -15,6 +16,7 @@ export class ImportServiceStack extends cdk.Stack {
     scope: Construct,
     id: string,
     apiGateway: ApiGatewayStack,
+    catalogBatchProcessStack: CatalogBatchProcessStack,
   ) {
     super(scope, id, {});
 
@@ -78,9 +80,12 @@ export class ImportServiceStack extends cdk.Stack {
         handler: 'import-file-parser-handler.main',
         environment: {
           BUCKET_NAME: this.bucket.bucketName,
+          CATALOG_ITEMS_QUEUE_URL: catalogBatchProcessStack.catalogItemsQueueUrl,
         },
       },
     );
+
+    catalogBatchProcessStack.grantSendSQSMessages(this.importProductsFileParserLambda);
 
     this.bucket.grantRead(this.importProductsFileParserLambda);
     this.bucket.grantPut(this.importProductsFileParserLambda);
