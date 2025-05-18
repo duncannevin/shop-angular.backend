@@ -22,7 +22,7 @@ const sqsClient = new SQSClient([{
   region: process.env.AWS_REGION!,
 }]);
 
-class ImportedProduct {
+export class ImportedProduct {
   title: string;
   description: string;
   price: number;
@@ -68,9 +68,6 @@ export async function main(event: S3Event): Promise<void> {
     console.log(`Processing file: ${originalKey} from bucket: ${bucketName}`);
 
     try {
-      /**
-       * Step 1: Get the object from S3
-       */
       const getObjectCommand = new GetObjectCommand({
         Bucket: bucketName,
         Key: originalKey,
@@ -100,9 +97,6 @@ export async function main(event: S3Event): Promise<void> {
         await sqsClient.send(sendMessageCommand as any);
       }
 
-      /**
-       * Step 2: Copy the object to a new location
-       */
       const fileName = originalKey.split('/').pop();
       const parsedKey = `parsed/${fileName}`;
 
@@ -115,15 +109,11 @@ export async function main(event: S3Event): Promise<void> {
       await s3Client.send(copyObjectCommand as any);
       console.log(`Copied to: ${parsedKey}`);
 
-      /**
-       * Step 3: Delete the original object
-       */
       const deleteObjectCommand = new DeleteObjectCommand({
         Bucket: bucketName,
         Key: originalKey,
       });
 
-      // Step 3: Delete the original object
       await s3Client.send(deleteObjectCommand as any);
 
       console.log(`Deleted original file: ${originalKey}`);

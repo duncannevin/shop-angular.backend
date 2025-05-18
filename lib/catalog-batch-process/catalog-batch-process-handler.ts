@@ -29,6 +29,8 @@ function isImportedProduct(obj: any): obj is ImportedProduct {
 
 export async function main(event: SQSEvent) {
   console.log('Received event:', JSON.stringify(event.Records, null, 2));
+  let createdProducts = 0;
+
   for (const record of event.Records) {
     try {
       const parsedBody = JSON.parse(record.body);
@@ -43,13 +45,18 @@ export async function main(event: SQSEvent) {
       console.log('Processing record:', record);
 
       const newProduct = await productService.create({title, description, price});
-      console.log('Product created:', {title, description, price});
+      console.log('Product created:', newProduct);
       await stockService.create({product_id: newProduct.id, count});
       console.log('Stock created:', {productId: newProduct.id, title: newProduct.title, count});
-
+      createdProducts++;
     } catch (error) {
       console.error('Error processing record:', record, error);
     }
+  }
+
+  if (createdProducts === 0) {
+    console.log('No products created. Exiting...');
+    return;
   }
 
   try {
