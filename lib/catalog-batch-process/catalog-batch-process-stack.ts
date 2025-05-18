@@ -22,9 +22,25 @@ export class CatalogBatchProcessStack extends cdk.Stack {
 
     this.createProductTopic = new sns.Topic(this, 'CreateProductTopic');
 
-    this.createProductTopic.addSubscription(
-      new subscriptions.EmailSubscription(process.env.MY_EMAIL!),
-    );
+    // Create a subscription to the SNS topic with a filter policy
+    const filterPolicy = {
+      category: sns.SubscriptionFilter.stringFilter({
+        allowlist: process.env.ALLOWLIST_CATEGORIES?.split(',') || [],
+      })
+    }
+
+    // Add the subscription to the SNS topic
+    const emails = process.env.ALLOWLIST_EMAILS?.split(',') || [];
+
+    // Add email subscriptions to the SNS topic
+    emails.forEach(email => {
+      this.createProductTopic.addSubscription(
+        new subscriptions.EmailSubscription(email),
+        {
+          filterPolicy,
+        },
+      );
+    });
 
     this.catalogBatchProcessLambda = new lambda.Function(
       this,
