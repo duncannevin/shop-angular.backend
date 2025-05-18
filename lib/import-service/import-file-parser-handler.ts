@@ -1,4 +1,4 @@
-import { S3Event } from 'aws-lambda';
+import {S3Event} from 'aws-lambda';
 import {
   S3Client,
   GetObjectCommand,
@@ -6,23 +6,52 @@ import {
   DeleteObjectCommand,
   GetObjectCommandOutput
 } from '@aws-sdk/client-s3';
-import { Readable } from 'stream';
+import {SQSClient, SendMessageCommand, SendMessageBatchCommand} from '@aws-sdk/client-sqs';
+import {Readable} from 'stream';
 import * as csvParser from 'csv-parser';
+import {chunkArray} from '../common/utils-stack';
+
+const CATALOG_ITEMS_QUEUE_URL = process.env.CATALOG_ITEMS_QUEUE_URL!;
 
 const s3Client = new S3Client([{
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION!,
 }]);
 
-const parseCsvStream = (stream: Readable): Promise<void> => {
+
+const sqsClient = new SQSClient([{
+  region: process.env.AWS_REGION!,
+}]);
+
+export class ImportedProduct {
+  title: string;
+  description: string;
+  price: number;
+  count: number;
+  action: string;
+
+  constructor(data: any) {
+    this.title = data.Title;
+    this.description = data.Description;
+    this.price = parseFloat(data.Price);
+    this.count = parseInt(data.Count, 10);
+    this.action = data.Action;
+  }
+}
+
+const parseCsvStream = (stream: Readable): Promise<ImportedProduct[]> => {
   return new Promise((resolve, reject) => {
+    const products: ImportedProduct[] = [];
+
     stream
       .pipe(csvParser())
       .on('data', (record) => {
-        console.log('Parsed record:', record);
+        const product = new ImportedProduct(record);
+        console.log('Parsed record:', product);
+        products.push(product);
       })
-      .on('end', () => {
-        console.log('CSV parsing complete.');
-        resolve();
+      .on('end', async () => {
+        console.log('CSV parsing complete. returning products...');
+        resolve(products);
       })
       .on('error', (err) => {
         console.error('Stream error:', err);
@@ -39,25 +68,35 @@ export async function main(event: S3Event): Promise<void> {
     console.log(`Processing file: ${originalKey} from bucket: ${bucketName}`);
 
     try {
-      /**
-       * Step 1: Get the object from S3
-       */
       const getObjectCommand = new GetObjectCommand({
         Bucket: bucketName,
         Key: originalKey,
       });
 
-      const { Body }: GetObjectCommandOutput = await s3Client.send(getObjectCommand as any);
+      const {Body}: GetObjectCommandOutput = await s3Client.send(getObjectCommand as any);
 
       if (!Body || !(Body instanceof Readable)) {
         throw new Error('Invalid stream from S3 object');
       }
 
-      await parseCsvStream(Body);
+      const importedProducts = await parseCsvStream(Body);
 
-      /**
-       * Step 2: Copy the object to a new location
-       */
+      const entries = importedProducts.map((product, index) => ({
+        Id: index.toString(),
+        MessageBody: JSON.stringify(product),
+      }));
+
+      const entryChunks = chunkArray(entries, 10);
+
+      for (const chunk of entryChunks) {
+        const sendMessageCommand = new SendMessageBatchCommand({
+          Entries: chunk,
+          QueueUrl: CATALOG_ITEMS_QUEUE_URL,
+        });
+
+        await sqsClient.send(sendMessageCommand as any);
+      }
+
       const fileName = originalKey.split('/').pop();
       const parsedKey = `parsed/${fileName}`;
 
@@ -70,15 +109,11 @@ export async function main(event: S3Event): Promise<void> {
       await s3Client.send(copyObjectCommand as any);
       console.log(`Copied to: ${parsedKey}`);
 
-      /**
-       * Step 3: Delete the original object
-       */
       const deleteObjectCommand = new DeleteObjectCommand({
         Bucket: bucketName,
         Key: originalKey,
       });
 
-      // Step 3: Delete the original object
       await s3Client.send(deleteObjectCommand as any);
 
       console.log(`Deleted original file: ${originalKey}`);
