@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import {ProductService} from '../lib/services/product-service';
-import {StockService} from '../lib/services/stock-service';
+import {ProductService} from '../lib/common/services/product-service';
+import {StockService} from '../lib/common/services/stock-service';
 
 process.env.AWS_REGION = 'us-west-2';
 process.env.PRODUCT_TABLE_NAME = 'ProductsTable';

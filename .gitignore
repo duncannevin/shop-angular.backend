@@ -14,3 +14,6 @@ cdk.out
 
 /dist
 *.template.yaml
+
+# configuration
+.env

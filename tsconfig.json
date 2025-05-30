@@ -27,7 +27,8 @@
     ],
     "paths": {
       "services/*": [
-        "./lib/services/*"
+        "./lib/common/services/*",
+        "./lib/common/utils/*"
       ],
     }
   },

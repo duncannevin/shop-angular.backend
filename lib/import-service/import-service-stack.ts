@@ -5,6 +5,9 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import {ApiGatewayStack} from '../api-gateway/api-gateway-stack';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
+import {config} from 'dotenv';
+
+config();
 
 export class ImportServiceStack extends cdk.Stack {
   private readonly bucket: s3.Bucket;
@@ -26,7 +29,7 @@ export class ImportServiceStack extends cdk.Stack {
       this,
       'ImportServiceBucket',
       {
-        bucketName: 'import-service-bucket',
+        bucketName: process.env.IMPORT_SERVICE_BUCKET_NAME!,
         removalPolicy: process.env.NODE_ENV !== 'development' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
         versioned: true,
         cors: [

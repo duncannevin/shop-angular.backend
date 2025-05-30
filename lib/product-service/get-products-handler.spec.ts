@@ -1,11 +1,11 @@
-import {main} from './handler';
+import {main} from './get-products-handler';
 import { jest } from '@jest/globals';
 
 export const listMock = jest.fn();
 export const getMock = jest.fn();
 
 // Mock the modules using function factories
-jest.mock('../services/product-service', () => {
+jest.mock('../common/services/product-service', () => {
   return {
     ProductService: class {
       list() {
@@ -15,7 +15,7 @@ jest.mock('../services/product-service', () => {
   };
 });
 
-jest.mock('../services/stock-service', () => {
+jest.mock('../common/services/stock-service', () => {
   return {
     StockService: class {
       get(id: string) {
