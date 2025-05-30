@@ -1,10 +1,10 @@
-import {main} from './handler';
+import {main} from './get-product-handler';
 import { jest } from '@jest/globals';
 
 export const getProductMock = jest.fn();
 export const getStockMock = jest.fn();
 
-jest.mock('services/product-service', () => {
+jest.mock('../common/services/product-service', () => {
   return {
     ProductService: class {
       get(productId: string) {
@@ -15,7 +15,7 @@ jest.mock('services/product-service', () => {
   };
 });
 
-jest.mock('services/stock-service', () => {
+jest.mock('../common/services/stock-service', () => {
   return {
     StockService: class {
       get(productId: string) {

@@ -1,9 +1,9 @@
-import {main} from './handler';
+import {main} from './create-product-handler';
 import { jest } from '@jest/globals';
 
 export const createProductMock = jest.fn();
 
-jest.mock('services/product-service', () => {
+jest.mock('../common/services/product-service', () => {
   return {
     ProductService: class {
       create(product: any) {

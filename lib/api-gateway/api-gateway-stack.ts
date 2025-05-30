@@ -12,7 +12,7 @@ import {
   mapBody,
   mapParams, mapQueryStringParams,
   mapResourcePath
-} from '../common/utils-stack';
+} from '../common/utils/utils-stack';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing

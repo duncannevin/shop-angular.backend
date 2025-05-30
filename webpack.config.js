@@ -26,7 +26,8 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      services: path.resolve(__dirname, 'lib/services'),
+      services: path.resolve(__dirname, 'lib/common/services'),
+      utils: path.resolve(__dirname, 'lib/common/utils'),
     },
   },
   module: {
