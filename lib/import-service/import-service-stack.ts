@@ -3,21 +3,19 @@ import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
-import {ApiGatewayStack} from '../api-gateway/api-gateway-stack';
-import {HttpMethod} from 'aws-cdk-lib/aws-events';
 import {config} from 'dotenv';
+import {generateLambdaProps} from '../common/utils/generate-lambda-props';
 
 config();
 
 export class ImportServiceStack extends cdk.Stack {
   private readonly bucket: s3.Bucket;
-  private readonly importProductsFileLambda: lambda.Function;
-  private readonly importProductsFileParserLambda: lambda.Function;
+  readonly importProductsFileLambda: lambda.Function;
+  readonly importProductsFileParserLambda: lambda.Function;
 
   constructor(
     scope: Construct,
     id: string,
-    apiGateway: ApiGatewayStack,
   ) {
     super(scope, id, {});
 
@@ -50,21 +48,11 @@ export class ImportServiceStack extends cdk.Stack {
     this.importProductsFileLambda = new lambda.Function(
       this,
       'ImportProductsFileFunction',
-      {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        code: lambda.Code.fromAsset(
-          'dist/import-service',
-        ),
-        handler: 'import-products-file-handler.main',
-        environment: {
-          BUCKET_NAME: this.bucket.bucketName,
-        },
-      },
+      generateLambdaProps('dist/import-service', 'import-products-file-handler.main', {
+        BUCKET_NAME: this.bucket.bucketName,
+      }),
     );
 
-    this.bucket.grantPut(this.importProductsFileLambda);
-
-    apiGateway.addLambda(this.importProductsFileLambda, ['import'], HttpMethod.GET, ['fileName'], []);
 
     /**
      * The import file parser lambda function is responsible for parsing the imported file and processing its contents.
@@ -73,18 +61,12 @@ export class ImportServiceStack extends cdk.Stack {
     this.importProductsFileParserLambda = new lambda.Function(
       this,
       'ImportProductsFileParserFunction',
-      {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        code: lambda.Code.fromAsset(
-          'dist/import-service',
-        ),
-        handler: 'import-file-parser-handler.main',
-        environment: {
-          BUCKET_NAME: this.bucket.bucketName,
-        },
-      },
+      generateLambdaProps('dist/import-service', 'import-file-parser-handler.main', {
+        BUCKET_NAME: this.bucket.bucketName,
+      }),
     );
 
+    this.bucket.grantPut(this.importProductsFileLambda);
     this.bucket.grantRead(this.importProductsFileParserLambda);
     this.bucket.grantPut(this.importProductsFileParserLambda);
     this.bucket.grantDelete(this.importProductsFileParserLambda);

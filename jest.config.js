@@ -6,6 +6,7 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest'
   },
   moduleNameMapper: {
-    '^services/(.*)$': '<rootDir>/lib/services/$1',
+    '^services/(.*)$': '<rootDir>/lib/common/services/$1',
+    '^utils/(.*)$': '<rootDir>/lib/common/utils/$1',
   },
 };
