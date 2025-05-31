@@ -28,10 +28,12 @@ function generatePolicy(effect: 'Allow' | 'Deny', resource: string): APIGatewayA
  * @returns The authorizer result.
  */
 export async function main(event: APIGatewayTokenAuthorizerEvent): Promise<APIGatewayAuthorizerResult> {
+  console.log('Event:', JSON.stringify(event, null, 2));
   try {
     const token = event.authorizationToken;
 
     if (!token || !token.startsWith('Basic ')) {
+      console.log('Unauthorized: No Basic Authorization token provided');
       throw new Error('Unauthorized');
     }
 
@@ -41,18 +43,22 @@ export async function main(event: APIGatewayTokenAuthorizerEvent): Promise<APIGa
     const [username, password] = decodedCredentials.split(':');
 
     if (!username || !password) {
+      console.log('Unauthorized: Invalid Basic Authorization token format');
       throw new Error('Unauthorized');
     }
 
     // Validate credentials against environment variables
     const expectedPassword = process.env[username];
     if (expectedPassword !== password) {
-      throw new Error('Unauthorized');
+      console.log('Access Denied: Invalid credentials');
+      throw new Error('Access Denied');
     }
 
+    console.log('Access Granted: Valid credentials provided');
     // Return an IAM policy allowing access
     return generatePolicy('Allow', event.methodArn);
   } catch (error) {
+    console.log('Access Denied:', (error instanceof Error ? error : {message: 'who knows'}).message);
     // Return an IAM policy denying access
     return generatePolicy('Deny', event.methodArn);
   }

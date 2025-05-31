@@ -7,9 +7,10 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
-import {AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
+import {AuthorizationType, MethodLoggingLevel} from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
 import {mapBody, mapParams, mapQueryStringParams, mapResourcePath} from '../common/utils/utils-stack';
+import {LogGroup} from 'aws-cdk-lib/aws-logs';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -49,10 +50,13 @@ export class ApiGatewayStack extends cdk.Stack {
       allowMethods: apiGateway.Cors.ALL_METHODS,
     });
 
-    const authorizerFn = lambda.Function.fromFunctionArn(
+    const authorizerFn = lambda.Function.fromFunctionAttributes(
       this,
       'BasicAuthorizerLambda',
-      basicAuthorizerLambdaArn,
+      {
+        functionArn: basicAuthorizerLambdaArn,
+        sameEnvironment: true,
+      },
     );
 
     this.authorizer = new apiGateway.TokenAuthorizer(
@@ -60,7 +64,7 @@ export class ApiGatewayStack extends cdk.Stack {
       'ProductsBasicAuthorizer',
       {
         handler: authorizerFn,
-        identitySource: apiGateway.IdentitySource.header('Authorization'),
+        identitySource: 'method.request.header.Authorization',
       },
     );
   }
@@ -72,6 +76,7 @@ export class ApiGatewayStack extends cdk.Stack {
    * @param method - The HTTP method for the endpoint.
    * @param queryParams - Optional query parameters for the request.
    * @param bodyParams
+   * @param secure
    */
   addLambda(
     lambda: lambda.Function,

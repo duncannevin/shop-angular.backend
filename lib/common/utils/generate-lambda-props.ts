@@ -5,7 +5,7 @@ export function generateLambdaProps(path: string, handler: string, environment: 
   return {
     runtime: lambda.Runtime.NODEJS_20_X,
     memorySize: 1024,
-    timeout: cdk.Duration.seconds(5),
+    timeout: cdk.Duration.seconds(30),
     code: lambda.Code.fromAsset(
       path,
     ),
