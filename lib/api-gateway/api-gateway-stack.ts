@@ -7,12 +7,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
+import {AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {
-  mapBody,
-  mapParams, mapQueryStringParams,
-  mapResourcePath
-} from '../common/utils/utils-stack';
+import {mapBody, mapParams, mapQueryStringParams, mapResourcePath} from '../common/utils/utils-stack';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -22,17 +19,21 @@ import {
 export class ApiGatewayStack extends cdk.Stack {
   private api: apiGateway.RestApi;
   private readonly root: apiGateway.IResource;
+  private readonly authorizer: apiGateway.TokenAuthorizer;
 
   /**
    * Constructor for the `ApiGatewayStack` class.
    * @param scope - The parent construct.
    * @param id - The unique identifier for the stack.
+   * @param basicAuthorizerLambdaArn
    */
   constructor(
     scope: cdk.App,
     id: string,
+    basicAuthorizerLambdaArn: string,
   ) {
     super(scope, id);
+
     this.api = new apiGateway.RestApi(
       this,
       'product-api-gateway',
@@ -47,6 +48,21 @@ export class ApiGatewayStack extends cdk.Stack {
       allowOrigins: apiGateway.Cors.ALL_ORIGINS,
       allowMethods: apiGateway.Cors.ALL_METHODS,
     });
+
+    const authorizerFn = lambda.Function.fromFunctionArn(
+      this,
+      'BasicAuthorizerLambda',
+      basicAuthorizerLambdaArn,
+    );
+
+    this.authorizer = new apiGateway.TokenAuthorizer(
+      this,
+      'ProductsBasicAuthorizer',
+      {
+        handler: authorizerFn,
+        identitySource: apiGateway.IdentitySource.header('Authorization'),
+      },
+    );
   }
 
   /**
@@ -63,6 +79,7 @@ export class ApiGatewayStack extends cdk.Stack {
     method: HttpMethod,
     queryParams: string[],
     bodyParams: string[],
+    secure = false,
   ) {
     const queryTemplate = mapParams(path);
     const bodyTemplate = mapBody(bodyParams);
@@ -126,6 +143,8 @@ export class ApiGatewayStack extends cdk.Stack {
       method,
       integration,
       {
+        authorizationType: secure ? AuthorizationType.CUSTOM : AuthorizationType.NONE,
+        authorizer: secure ? this.authorizer : undefined,
         methodResponses: [
           {
             statusCode: '200', responseParameters: {
