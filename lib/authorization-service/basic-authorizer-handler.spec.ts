@@ -1,65 +1,94 @@
-import { APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent } from 'aws-lambda';
+import { main } from './basic-authorizer-handler';
+import { APIGatewayTokenAuthorizerEvent } from 'aws-lambda';
 
-/**
- * Generates an IAM policy.
- * @param effect - The policy effect ("Allow" or "Deny").
- * @param resource - The resource ARN.
- * @returns The IAM policy.
- */
-function generatePolicy(effect: 'Allow' | 'Deny', resource: string): APIGatewayAuthorizerResult {
-  return {
-    principalId: 'user',
-    policyDocument: {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Action: 'execute-api:Invoke',
-          Effect: effect,
-          Resource: resource,
-        },
-      ],
-    },
-  };
-}
+describe('Basic Authorizer Handler', () => {
+  let consoleLogSpy: jest.SpyInstance;
 
-/**
- * Main handler for the Basic Authorizer Lambda.
- * @param event - The API Gateway Token Authorizer event.
- * @returns The authorizer result.
- */
-export async function main(event: APIGatewayTokenAuthorizerEvent): Promise<APIGatewayAuthorizerResult> {
-  console.log('Event:', JSON.stringify(event, null, 2));
-  try {
-    const token = event.authorizationToken;
+  beforeEach(() => {
+    // Mock environment variables
+    process.env.username = 'PASSWORD';
+    process.env.anotheruser = 'ANOTHER_PASSWORD';
 
-    if (!token || !token.startsWith('Basic ')) {
-      console.log('Unauthorized: No Basic Authorization token provided');
-      throw new Error('Unauthorized');
-    }
+    // @ts-ignore
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+  });
 
-    // Decode the Basic Authorization token
-    const base64Credentials = token.split(' ')[1];
-    const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
-    const [username, password] = decodedCredentials.split(':');
+  afterEach(() => {
+    // Clear environment variables
+    delete process.env.username;
+    delete process.env.anotheruser;
 
-    if (!username || !password) {
-      console.log('Unauthorized: Invalid Basic Authorization token format');
-      throw new Error('Unauthorized');
-    }
+    // Restore console.log
+    consoleLogSpy.mockRestore();
+  });
 
-    // Validate credentials against environment variables
-    const expectedPassword = process.env[username];
-    if (expectedPassword !== password) {
-      console.log('Access Denied: Invalid credentials');
-      throw new Error('Access Denied');
-    }
+  it('should allow access for valid credentials', async () => {
+    const event: APIGatewayTokenAuthorizerEvent = {
+      type: 'TOKEN',
+      authorizationToken: 'Basic dXNlcm5hbWU6UEFTU1dPUkQ=', // Base64 for "username:PASSWORD"
+      methodArn: 'arn:aws:execute-api:region:account-id:api-id/stage/GET/resource',
+    };
 
-    console.log('Access Granted: Valid credentials provided');
-    // Return an IAM policy allowing access
-    return generatePolicy('Allow', event.methodArn);
-  } catch (error) {
-    console.log('Access Denied:', (error instanceof Error ? error : {message: 'who knows'}).message);
-    // Return an IAM policy denying access
-    return generatePolicy('Deny', event.methodArn);
-  }
-}
+    const result = await main(event);
+
+    const statement = result.policyDocument.Statement[0] as { Resource: string };
+    expect(result.policyDocument.Statement[0].Effect).toBe('Allow');
+    expect(statement.Resource).toBe(event.methodArn);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith('Event:', JSON.stringify(event, null, 2));
+    expect(consoleLogSpy).toHaveBeenCalledWith('Access Granted: Valid credentials provided');
+  });
+
+  it('should deny access for invalid credentials', async () => {
+    const event: APIGatewayTokenAuthorizerEvent = {
+      type: 'TOKEN',
+      authorizationToken: 'Basic dXNlcm5hbWU6SU5WQUxJRF9QQVNTV09SRA==', // Base64 for "username:INVALID_PASSWORD"
+      methodArn: 'arn:aws:execute-api:region:account-id:api-id/stage/GET/resource',
+    };
+
+    const result = await main(event);
+
+    const statement = result.policyDocument.Statement[0] as { Resource: string };
+    expect(result.policyDocument.Statement[0].Effect).toBe('Deny');
+    expect(statement.Resource).toBe(event.methodArn);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith('Event:', JSON.stringify(event, null, 2));
+    expect(consoleLogSpy).toHaveBeenCalledWith('Access Denied: Invalid credentials');
+  });
+
+  it('should deny access for missing token', async () => {
+    const event: APIGatewayTokenAuthorizerEvent = {
+      type: 'TOKEN',
+      authorizationToken: '',
+      methodArn: 'arn:aws:execute-api:region:account-id:api-id/stage/GET/resource',
+    };
+
+    const result = await main(event);
+
+    const statement = result.policyDocument.Statement[0] as { Resource: string };
+    expect(result.policyDocument.Statement[0].Effect).toBe('Deny');
+    expect(statement.Resource).toBe(event.methodArn);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith('Event:', JSON.stringify(event, null, 2));
+    expect(consoleLogSpy).toHaveBeenCalledWith('Unauthorized: No Basic Authorization token provided');
+    expect(consoleLogSpy).toHaveBeenCalledWith('Access Denied:', 'Unauthorized');
+  });
+
+  it('should deny access for malformed token', async () => {
+    const event: APIGatewayTokenAuthorizerEvent = {
+      type: 'TOKEN',
+      authorizationToken: 'Bearer some-invalid-token',
+      methodArn: 'arn:aws:execute-api:region:account-id:api-id/stage/GET/resource',
+    };
+
+    const result = await main(event);
+
+    const statement = result.policyDocument.Statement[0] as { Resource: string };
+    expect(result.policyDocument.Statement[0].Effect).toBe('Deny');
+    expect(statement.Resource).toBe(event.methodArn);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith('Event:', JSON.stringify(event, null, 2));
+    expect(consoleLogSpy).toHaveBeenCalledWith('Unauthorized: No Basic Authorization token provided');
+    expect(consoleLogSpy).toHaveBeenCalledWith('Access Denied:', 'Unauthorized');
+  });
+});
