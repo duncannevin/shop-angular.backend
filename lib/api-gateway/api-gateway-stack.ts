@@ -7,10 +7,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
-import {AuthorizationType, MethodLoggingLevel} from 'aws-cdk-lib/aws-apigateway';
+import {AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
 import {mapBody, mapParams, mapQueryStringParams, mapResourcePath} from '../common/utils/utils-stack';
-import {LogGroup} from 'aws-cdk-lib/aws-logs';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -45,10 +44,10 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     this.root = this.api.root.addResource('products');
-    this.root.addCorsPreflight({
-      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
-      allowMethods: apiGateway.Cors.ALL_METHODS,
-    });
+    // this.root.addCorsPreflight({
+    //   allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+    //   allowMethods: apiGateway.Cors.ALL_METHODS,
+    // });
 
     const authorizerFn = lambda.Function.fromFunctionAttributes(
       this,
@@ -94,7 +93,19 @@ export class ApiGatewayStack extends cdk.Stack {
       ...bodyTemplate,
       ...queryStringTemplate,
     };
+    if (method === HttpMethod.OPTIONS) {
+      return;
+    }
+
     const resource = mapResourcePath(this.root, path);
+
+    if (!resource.node.tryFindChild('OPTIONS')) {
+      resource.addCorsPreflight({
+        allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+        allowMethods: apiGateway.Cors.ALL_METHODS,
+        allowHeaders: ['*'],
+      });
+    }
 
     const integration = new apiGateway.LambdaIntegration(
       lambda,
@@ -144,36 +155,17 @@ export class ApiGatewayStack extends cdk.Stack {
       },
     );
 
-    resource.addMethod(
-      method,
-      integration,
-      {
-        authorizationType: secure ? AuthorizationType.CUSTOM : AuthorizationType.NONE,
-        authorizer: secure ? this.authorizer : undefined,
-        methodResponses: [
-          {
-            statusCode: '200', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-          {
-            statusCode: '404', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-          {
-            statusCode: '500', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-        ]
-      },
-    );
+    resource.addMethod(method, integration, {
+      authorizationType: secure ? AuthorizationType.CUSTOM : AuthorizationType.NONE,
+      authorizer: secure ? this.authorizer : undefined,
+      methodResponses: ['200', '404', '500'].map(status => ({
+        statusCode: status,
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Origin': true,
+          'method.response.header.Access-Control-Allow-Methods': true,
+          'method.response.header.Access-Control-Allow-Headers': true,
+        },
+      })),
+    });
   }
 }
