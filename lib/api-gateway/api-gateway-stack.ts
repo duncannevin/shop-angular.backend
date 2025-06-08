@@ -7,12 +7,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
+import {AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
 import {HttpMethod} from 'aws-cdk-lib/aws-events';
-import {
-  mapBody,
-  mapParams, mapQueryStringParams,
-  mapResourcePath
-} from '../common/utils/utils-stack';
+import {mapBody, mapParams, mapQueryStringParams, mapResourcePath} from '../common/utils/utils-stack';
 
 /**
  * `ApiGatewayStack` is a CDK stack that creates an API Gateway for managing
@@ -22,17 +19,21 @@ import {
 export class ApiGatewayStack extends cdk.Stack {
   private api: apiGateway.RestApi;
   private readonly root: apiGateway.IResource;
+  private readonly authorizer: apiGateway.TokenAuthorizer;
 
   /**
    * Constructor for the `ApiGatewayStack` class.
    * @param scope - The parent construct.
    * @param id - The unique identifier for the stack.
+   * @param basicAuthorizerLambdaArn
    */
   constructor(
     scope: cdk.App,
     id: string,
+    basicAuthorizerLambdaArn: string,
   ) {
     super(scope, id);
+
     this.api = new apiGateway.RestApi(
       this,
       'product-api-gateway',
@@ -43,10 +44,28 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     this.root = this.api.root.addResource('products');
-    this.root.addCorsPreflight({
-      allowOrigins: apiGateway.Cors.ALL_ORIGINS,
-      allowMethods: apiGateway.Cors.ALL_METHODS,
-    });
+    // this.root.addCorsPreflight({
+    //   allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+    //   allowMethods: apiGateway.Cors.ALL_METHODS,
+    // });
+
+    const authorizerFn = lambda.Function.fromFunctionAttributes(
+      this,
+      'BasicAuthorizerLambda',
+      {
+        functionArn: basicAuthorizerLambdaArn,
+        sameEnvironment: true,
+      },
+    );
+
+    this.authorizer = new apiGateway.TokenAuthorizer(
+      this,
+      'ProductsBasicAuthorizer',
+      {
+        handler: authorizerFn,
+        identitySource: 'method.request.header.Authorization',
+      },
+    );
   }
 
   /**
@@ -56,6 +75,7 @@ export class ApiGatewayStack extends cdk.Stack {
    * @param method - The HTTP method for the endpoint.
    * @param queryParams - Optional query parameters for the request.
    * @param bodyParams
+   * @param secure
    */
   addLambda(
     lambda: lambda.Function,
@@ -63,6 +83,7 @@ export class ApiGatewayStack extends cdk.Stack {
     method: HttpMethod,
     queryParams: string[],
     bodyParams: string[],
+    secure = false,
   ) {
     const queryTemplate = mapParams(path);
     const bodyTemplate = mapBody(bodyParams);
@@ -72,7 +93,19 @@ export class ApiGatewayStack extends cdk.Stack {
       ...bodyTemplate,
       ...queryStringTemplate,
     };
+    if (method === HttpMethod.OPTIONS) {
+      return;
+    }
+
     const resource = mapResourcePath(this.root, path);
+
+    if (!resource.node.tryFindChild('OPTIONS')) {
+      resource.addCorsPreflight({
+        allowOrigins: apiGateway.Cors.ALL_ORIGINS,
+        allowMethods: apiGateway.Cors.ALL_METHODS,
+        allowHeaders: ['*'],
+      });
+    }
 
     const integration = new apiGateway.LambdaIntegration(
       lambda,
@@ -122,34 +155,17 @@ export class ApiGatewayStack extends cdk.Stack {
       },
     );
 
-    resource.addMethod(
-      method,
-      integration,
-      {
-        methodResponses: [
-          {
-            statusCode: '200', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-          {
-            statusCode: '404', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-          {
-            statusCode: '500', responseParameters: {
-              'method.response.header.Access-Control-Allow-Origin': true,
-              'method.response.header.Access-Control-Allow-Methods': true,
-              'method.response.header.Access-Control-Allow-Headers': true,
-            }
-          },
-        ]
-      },
-    );
+    resource.addMethod(method, integration, {
+      authorizationType: secure ? AuthorizationType.CUSTOM : AuthorizationType.NONE,
+      authorizer: secure ? this.authorizer : undefined,
+      methodResponses: ['200', '404', '500'].map(status => ({
+        statusCode: status,
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Origin': true,
+          'method.response.header.Access-Control-Allow-Methods': true,
+          'method.response.header.Access-Control-Allow-Headers': true,
+        },
+      })),
+    });
   }
 }
